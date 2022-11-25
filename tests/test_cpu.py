@@ -2,12 +2,14 @@ from mock import patch
 from unittest import TestCase
 
 from chip8.cpu import CPU
+from chip8.display import Display
 
 class CPUTest(TestCase):
 
     def setUp(self) -> None:
         super().setUp()
-        self.cpu = CPU(None, None, None)
+        self.display = Display(height=32, width=64, scale=10)
+        self.cpu = CPU(None, None, display=self.display)
 
     def test_init_expect_all_setup_correctly(self):
         cpu = CPU(None, None, None)
@@ -33,10 +35,11 @@ class CPUTest(TestCase):
 
         self.assertEqual(opcode, 0xffff)
 
-    def test_run_instruction_00e0_expect_correct(self):
+    @patch('chip8.display.Display.clear_display')
+    def test_run_instruction_00e0_expect_correct(self, mock_clear_display):
         self.cpu.memory[0x200] = 0x00
         self.cpu.memory[0x201] = 0xe0
         self.cpu.cycle()
 
-        # todo: assert display clear called
         self.assertEqual(self.cpu.pc, 0x202)
+        mock_clear_display.assert_called_once()

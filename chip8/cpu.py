@@ -1,7 +1,8 @@
 import random
+from .display import Display
 
 class CPU:
-    def __init__(self, keyboard, sound, display) -> None:
+    def __init__(self, keyboard, sound, display: Display) -> None:
         self.keyboard = keyboard
         self.sound = sound
         self.display = display
@@ -95,7 +96,7 @@ class CPU:
 
     def __handle_0(self, opcode):
         if opcode == 0x00e0:
-            # todo: clear screen
+            self.display.clear_display()
             self.pc += 2
         elif opcode == 0x00ee:
             self.pc = self.stack.pop()

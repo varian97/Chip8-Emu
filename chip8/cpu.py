@@ -163,13 +163,20 @@ class CPU:
         elif nibble == 3:
             self.v[x] ^= self.v[y]
         elif nibble == 4:
-            # @todo: implement
-            pass
+            self.v[0xf] = 0
+            total = self.v[x] + self.v[y]
+            if total > 0xff:
+                self.v[0xf] = 1
+            self.v[x] = total & 0xff
         elif nibble == 5:
             self.v[0xf] = 0
             if self.v[x] > self.v[y]:
                 self.v[0xf] = 1
-            self.v[x] -= self.v[y]
+
+            diff = self.v[x] - self.v[y]
+            if diff < 0:
+                diff += 256
+            self.v[x] = diff
         elif nibble == 6:
             self.v[0xf] = 0
             if self.v[x] & 0x1:

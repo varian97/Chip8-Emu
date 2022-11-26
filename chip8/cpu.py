@@ -1,8 +1,9 @@
 import random
 from .display import Display
+from .keyboard import Keyboard
 
 class CPU:
-    def __init__(self, keyboard, sound, display: Display) -> None:
+    def __init__(self, keyboard: Keyboard, sound, display: Display) -> None:
         self.keyboard = keyboard
         self.sound = sound
         self.display = display
@@ -29,6 +30,7 @@ class CPU:
         self.stack = []
 
         self.paused = False
+        self.register_for_waiting_key = None
 
         self.sprites = [
             0xf0, 0x90, 0x90, 0x90, 0xf0,  # 0
@@ -82,17 +84,28 @@ class CPU:
         if not self.paused:
             opcode = self.fetch_instruction()
             self.run_instruction(opcode)
+        if not self.paused:
+            if self.sound_timer > 0:
+                self.sound_timer -= 1
+            if self.delay_timer > 0:
+                self.delay_timer -= 1
 
     def fetch_instruction(self):
         first_byte = self.memory[self.pc]
         second_byte = self.memory[self.pc + 1]
         opcode = (first_byte << 8) | second_byte
-
+        print(hex(opcode), self.v[11])
         return opcode
 
     def run_instruction(self, opcode):
         prefix = opcode >> 12
         self.func_pointer[prefix](opcode=opcode)
+
+    def handle_keyboard_press_callback(self, key: int) -> None:
+        self.v[self.register_for_waiting_key] = key
+        self.register_for_waiting_key = None
+        self.paused = False
+        self.pc += 2
 
     def __handle_0(self, opcode):
         if opcode == 0x00e0:
@@ -110,7 +123,7 @@ class CPU:
 
     def __handle_2(self, opcode):
         addr = opcode & 0xfff
-        self.stack.append(self.pc)
+        self.stack.append(self.pc + 2)
         self.pc = addr
 
     def __handle_3(self, opcode):
@@ -147,6 +160,7 @@ class CPU:
         x = (opcode >> 8) & 0xf
         kk = (opcode & 0xff)
         self.v[x] += kk
+        self.v[x] &= 0xff
         self.pc += 2
 
     def __handle_8(self, opcode):
@@ -218,17 +232,36 @@ class CPU:
         self.pc += 2
 
     def __handle_D(self, opcode):
-        # @todo: implement display sprite
-        pass
+        x = (opcode >> 8) & 0xf
+        y = (opcode >> 4) & 0xf
+        n = opcode & 0xf
+
+        for i in range(n):
+            b = self.memory[self.i + i]
+            right_shift = 7
+            print('render ', self.v[x], self.v[y] + i)
+            while right_shift >= 0:
+                val = (b >> right_shift) & 0x1
+                erased = self.display.set_pixel(
+                    self.v[x] + 7 - right_shift,
+                    self.v[y] + i,
+                    val
+                )
+                right_shift -= 1
+                self.v[0xf] |= erased
+        self.pc += 2
 
     def __handle_E(self, opcode):
-        # @todo: implement keyboard
         x = (opcode >> 8) & 0xf
         second_byte = opcode & 0xff
         if second_byte == 0x9e:
-            pass
+            if self.keyboard.is_key_pressed(self.v[x]):
+                self.pc += 2
         else:  # ExA1
-            pass
+            if not self.keyboard.is_key_pressed(self.v[x]):
+                self.pc += 2
+
+        self.pc += 2
 
     def __handle_F(self, opcode):
         x = (opcode >> 8) & 0xf
@@ -238,8 +271,8 @@ class CPU:
             self.v[x] = self.delay_timer
             self.pc += 2
         elif second_byte == 0x0a:
-            # @todo: implement keyboard
-            pass
+            self.paused = True
+            self.register_for_waiting_key = x
         elif second_byte == 0x15:
             self.delay_timer = self.v[x]
             self.pc += 2

@@ -11,7 +11,7 @@ pygame.display.set_caption('Chip8 Emulator')
 if __name__ == '__main__':
     running = True
 
-    cycle_clock = 1 / 60
+    cycle_clock = 1 / 120
     previous = None
 
     display = Display(scale=10)

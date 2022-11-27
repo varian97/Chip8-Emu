@@ -94,7 +94,7 @@ class CPU:
         first_byte = self.memory[self.pc]
         second_byte = self.memory[self.pc + 1]
         opcode = (first_byte << 8) | second_byte
-        print(hex(opcode), self.v[11])
+
         return opcode
 
     def run_instruction(self, opcode):
@@ -200,10 +200,13 @@ class CPU:
             self.v[0xf] = 0
             if self.v[y] > self.v[x]:
                 self.v[0xf] = 1
-            self.v[x] = self.v[y] - self.v[x]
+            diff = self.v[y] - self.v[x]
+            if diff < 0:
+                diff += 256
+            self.v[x] = diff
         else:  # 8xyE
             self.v[0xf] = 0
-            if self.v[x] & 0x10:
+            if self.v[x] & 0x80:
                 self.v[0xf] = 1
             self.v[x] << 1
 
@@ -238,9 +241,11 @@ class CPU:
 
         base_x = self.v[x] % self.display.cols
         base_y = self.v[y] % self.display.rows
+        self.v[0xf] = 0
 
         for height in range(n):
             b = self.memory[self.i + height]
+
             for width in range(8):
                 x_pos = base_x + width
                 y_pos = base_y + height
@@ -287,11 +292,11 @@ class CPU:
             self.pc += 2
         elif second_byte == 0x33:
             copy = self.v[x]
-            self.memory[self.i] = copy % 10
+            self.memory[self.i + 2] = copy % 10
             copy //= 10
             self.memory[self.i + 1] = copy % 10
             copy //= 10
-            self.memory[self.i + 2] = copy % 10
+            self.memory[self.i] = copy % 10
             self.pc += 2
         elif second_byte == 0x55:
             for i in range(x):

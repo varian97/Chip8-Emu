@@ -20,10 +20,8 @@ class Display:
         for i in range(self.height):
             for j in range(self.width):
                 self.logic_surface[i][j] = 0
-        pygame.display.update()
 
     def set_pixel(self, x: int, y: int) -> None:
-        erased = False
         _x = x * self.scale
         _y = y * self.scale
 
@@ -31,10 +29,11 @@ class Display:
 
         self.logic_surface[_y][_x] ^= 1
         if self.logic_surface[_y][_x] == 0:
-            erased = True
             self.surface.fill((0, 0, 0), rect)
         else:
             self.surface.fill((255, 255, 255), rect)
 
+        return self.logic_surface[_y][_x] == 0
+
+    def update_display(self):
         pygame.display.update()
-        return erased

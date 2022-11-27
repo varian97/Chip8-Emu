@@ -90,6 +90,8 @@ class CPU:
             if self.delay_timer > 0:
                 self.delay_timer -= 1
 
+        self.display.update_display()
+
     def fetch_instruction(self):
         first_byte = self.memory[self.pc]
         second_byte = self.memory[self.pc + 1]
@@ -186,7 +188,7 @@ class CPU:
             self.v[0xf] = 0
             if self.v[x] > self.v[y]:
                 self.v[0xf] = 1
-
+            # self.v[x] -= self.v[y]
             diff = self.v[x] - self.v[y]
             if diff < 0:
                 diff += 256
@@ -195,7 +197,7 @@ class CPU:
             self.v[0xf] = 0
             if self.v[x] & 0x1:
                 self.v[0xf] = 1
-            self.v[x] >> 1
+            self.v[x] >>= 1
         elif nibble == 7:
             self.v[0xf] = 0
             if self.v[y] > self.v[x]:
@@ -204,11 +206,12 @@ class CPU:
             if diff < 0:
                 diff += 256
             self.v[x] = diff
+            # self.v[x] = self.v[y] - self.v[x]
         else:  # 8xyE
             self.v[0xf] = 0
             if self.v[x] & 0x80:
                 self.v[0xf] = 1
-            self.v[x] << 1
+            self.v[x] <<= 1
 
         self.pc += 2
 
@@ -288,15 +291,12 @@ class CPU:
             self.i += self.v[x]
             self.pc += 2
         elif second_byte == 0x29:
-            self.i = self.memory[self.v[x] * 5]
+            self.i = self.v[x] * 5
             self.pc += 2
         elif second_byte == 0x33:
-            copy = self.v[x]
-            self.memory[self.i + 2] = copy % 10
-            copy //= 10
-            self.memory[self.i + 1] = copy % 10
-            copy //= 10
-            self.memory[self.i] = copy % 10
+            self.memory[self.i] = self.v[x] / 100
+            self.memory[self.i + 1] = (self.v[x] % 100) // 10
+            self.memory[self.i + 2] = self.v[x] % 10
             self.pc += 2
         elif second_byte == 0x55:
             for i in range(x):

@@ -11,22 +11,19 @@ pygame.display.set_caption('Chip8 Emulator')
 if __name__ == '__main__':
     running = True
 
-    cycle_clock = 1 / 120
-    previous = None
+    cycle_clock = 1 / 300
+    previous = time.time()
 
     display = Display(scale=10)
     keyboard = Keyboard()
     cpu = CPU(sound=None, keyboard=keyboard, display=display)
 
-    cpu.load_rom_into_memory('./roms/Blitz.ch8')
+    cpu.load_rom_into_memory('./roms/Pong.ch8')
     display.start()
 
     while running:
         now = time.time()
-        if previous is not None and now - previous > cycle_clock:
-            cpu.cycle()
-            previous = now
-        elif previous is None:
+        if now - previous >= cycle_clock:
             cpu.cycle()
             previous = now
 

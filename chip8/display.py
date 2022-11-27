@@ -2,9 +2,12 @@ import pygame
 
 class Display:
 
-    def __init__(self, height: int, width: int, scale: int) -> None:
-        self.height = height * scale
-        self.width = width * scale
+    def __init__(self, scale: int) -> None:
+        self.rows = 32
+        self.cols = 64
+
+        self.height = self.rows * scale
+        self.width = self.cols * scale
         self.scale = scale
         self.logic_surface = [[0] * self.width for _ in range(self.height)]
 
@@ -19,29 +22,18 @@ class Display:
                 self.logic_surface[i][j] = 0
         pygame.display.update()
 
-    def set_pixel(self, x: int, y: int, val:int) -> None:
+    def set_pixel(self, x: int, y: int) -> None:
         erased = False
         _x = x * self.scale
         _y = y * self.scale
 
-        if _x > self.width - 1:
-            _x -= self.width
-        elif x < 0:
-            _x += self.width
-
-        if _y > self.height - 1:
-            _y -= self.height
-        elif y < 0:
-            _y += self.height
-
         rect = pygame.Rect(_x, _y, self.scale, self.scale)
 
-        if self.logic_surface[_y][_x] == 1 and val == 1:
-            self.logic_surface[_y][_x] = 0
-            self.surface.fill((0, 0, 0), rect)
+        self.logic_surface[_y][_x] ^= 1
+        if self.logic_surface[_y][_x] == 0:
             erased = True
-        if self.logic_surface[_y][_x] == 0 and val == 1:
-            self.logic_surface[_y][_x] = 1
+            self.surface.fill((0, 0, 0), rect)
+        else:
             self.surface.fill((255, 255, 255), rect)
 
         pygame.display.update()

@@ -14,7 +14,7 @@ if __name__ == '__main__':
     cycle_clock = 1 / 60
     previous = None
 
-    display = Display(32, 64, 10)
+    display = Display(scale=10)
     keyboard = Keyboard()
     cpu = CPU(sound=None, keyboard=keyboard, display=display)
 

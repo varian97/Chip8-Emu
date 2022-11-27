@@ -236,19 +236,19 @@ class CPU:
         y = (opcode >> 4) & 0xf
         n = opcode & 0xf
 
-        for i in range(n):
-            b = self.memory[self.i + i]
-            right_shift = 7
-            print('render ', self.v[x], self.v[y] + i)
-            while right_shift >= 0:
-                val = (b >> right_shift) & 0x1
-                erased = self.display.set_pixel(
-                    self.v[x] + 7 - right_shift,
-                    self.v[y] + i,
-                    val
-                )
-                right_shift -= 1
-                self.v[0xf] |= erased
+        base_x = self.v[x] % self.display.cols
+        base_y = self.v[y] % self.display.rows
+
+        for height in range(n):
+            b = self.memory[self.i + height]
+            for width in range(8):
+                x_pos = base_x + width
+                y_pos = base_y + height
+                if (0x80 & b > 0) and x_pos < self.display.cols and y_pos < self.display.rows:
+                    erased = self.display.set_pixel(x_pos, y_pos)
+                    self.v[0xf] |= erased
+                b <<= 1
+
         self.pc += 2
 
     def __handle_E(self, opcode):

@@ -101,7 +101,9 @@ class CPU:
 
     def run_instruction(self, opcode):
         prefix = opcode >> 12
-        self.func_pointer[prefix](opcode=opcode)
+        func = self.func_pointer[prefix]
+        if func:
+            func(opcode=opcode)
 
     def handle_keyboard_press_callback(self, key: int) -> None:
         self.v[self.register_for_waiting_key] = key
@@ -110,47 +112,41 @@ class CPU:
         self.pc += 2
 
     def __handle_0(self, opcode):
+        # 0x0nnn ignored for most modern interpreter
         if opcode == 0x00e0:
             self.display.clear_display()
             self.pc += 2
         elif opcode == 0x00ee:
             self.pc = self.stack.pop()
-        else:  # 0x0nnn ignored for most modern interpreter
-            addr = opcode & 0xfff
-            self.pc = addr
+            pass
 
     def __handle_1(self, opcode):
-        addr = opcode & 0xfff
-        self.pc = addr
+        self.pc = (opcode & 0xfff)
 
     def __handle_2(self, opcode):
-        addr = opcode & 0xfff
         self.stack.append(self.pc + 2)
-        self.pc = addr
+        self.pc = (opcode & 0xfff)
 
     def __handle_3(self, opcode):
         x = (opcode >> 8) & 0xf
         kk = (opcode & 0xff)
         if self.v[x] == kk:
-            self.pc += 4
-        else:
             self.pc += 2
+        self.pc += 2
 
     def __handle_4(self, opcode):
         x = (opcode >> 8) & 0xf
         kk = (opcode & 0xff)
         if self.v[x] != kk:
-            self.pc += 4
-        else:
             self.pc += 2
+        self.pc += 2
 
     def __handle_5(self, opcode):
         x = (opcode >> 8) & 0xf
         y = (opcode >> 4) & 0xf
         if self.v[x] == self.v[y]:
-            self.pc += 4
-        else:
             self.pc += 2
+        self.pc += 2
 
     def __handle_6(self, opcode):
         x = (opcode >> 8) & 0xf
@@ -161,8 +157,8 @@ class CPU:
     def __handle_7(self, opcode):
         x = (opcode >> 8) & 0xf
         kk = (opcode & 0xff)
-        self.v[x] += kk
-        self.v[x] &= 0xff
+        total = (self.v[x] + kk) & 0xff
+        self.v[x] = total
         self.pc += 2
 
     def __handle_8(self, opcode):
@@ -185,33 +181,24 @@ class CPU:
                 self.v[0xf] = 1
             self.v[x] = total & 0xff
         elif nibble == 5:
-            self.v[0xf] = 0
-            if self.v[x] > self.v[y]:
-                self.v[0xf] = 1
-            # self.v[x] -= self.v[y]
+            self.v[0xf] = (self.v[x] > self.v[y])
             diff = self.v[x] - self.v[y]
             if diff < 0:
                 diff += 256
             self.v[x] = diff
         elif nibble == 6:
-            self.v[0xf] = 0
-            if self.v[x] & 0x1:
-                self.v[0xf] = 1
+            self.v[0xf] = (self.v[x] & 0x1)
             self.v[x] >>= 1
         elif nibble == 7:
-            self.v[0xf] = 0
-            if self.v[y] > self.v[x]:
-                self.v[0xf] = 1
+            self.v[0xf] = (self.v[y] > self.v[x])
             diff = self.v[y] - self.v[x]
             if diff < 0:
                 diff += 256
             self.v[x] = diff
-            # self.v[x] = self.v[y] - self.v[x]
         else:  # 8xyE
-            self.v[0xf] = 0
-            if self.v[x] & 0x80:
-                self.v[0xf] = 1
+            self.v[0xf] = (self.v[x] & 0x80)
             self.v[x] <<= 1
+            self.v[x] &= 0xff
 
         self.pc += 2
 
@@ -220,9 +207,8 @@ class CPU:
         y = (opcode >> 4) & 0xf
 
         if self.v[x] != self.v[y]:
-            self.pc += 4
-        else:
             self.pc += 2
+        self.pc += 2
 
     def __handle_A(self, opcode):
         self.i = (opcode & 0xfff)
@@ -252,7 +238,7 @@ class CPU:
             for width in range(8):
                 x_pos = base_x + width
                 y_pos = base_y + height
-                if (0x80 & b > 0) and x_pos < self.display.cols and y_pos < self.display.rows:
+                if ((0x80 & b) > 0) and x_pos < self.display.cols and y_pos < self.display.rows:
                     erased = self.display.set_pixel(x_pos, y_pos)
                     self.v[0xf] |= erased
                 b <<= 1
@@ -289,6 +275,7 @@ class CPU:
             self.pc += 2
         elif second_byte == 0X1e:
             self.i += self.v[x]
+            self.i &= 0xfff
             self.pc += 2
         elif second_byte == 0x29:
             self.i = self.v[x] * 5

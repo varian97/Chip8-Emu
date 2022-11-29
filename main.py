@@ -18,7 +18,7 @@ if __name__ == '__main__':
     keyboard = Keyboard()
     cpu = CPU(sound=None, keyboard=keyboard, display=display)
 
-    cpu.load_rom_into_memory('./roms/Pong.ch8')
+    cpu.load_rom_into_memory('./roms/Blitz.ch8')
     display.start()
 
     while running:

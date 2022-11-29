@@ -275,7 +275,6 @@ class CPU:
             self.pc += 2
         elif second_byte == 0X1e:
             self.i += self.v[x]
-            self.i &= 0xfff
             self.pc += 2
         elif second_byte == 0x29:
             self.i = self.v[x] * 5

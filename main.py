@@ -2,6 +2,7 @@ import pygame
 import time
 
 from chip8.cpu import CPU
+from chip8.audio import Audio
 from chip8.display import Display
 from chip8.keyboard import Keyboard
 
@@ -11,14 +12,15 @@ pygame.display.set_caption('Chip8 Emulator')
 if __name__ == '__main__':
     running = True
 
-    cycle_clock = 1 / 300
+    cycle_clock = 1 / 60
     previous = time.time()
 
     display = Display(scale=10)
     keyboard = Keyboard()
-    cpu = CPU(sound=None, keyboard=keyboard, display=display)
+    audio = Audio()
+    cpu = CPU(audio=audio, keyboard=keyboard, display=display)
 
-    cpu.load_rom_into_memory('./roms/Blitz.ch8')
+    cpu.load_rom_into_memory('./roms/Pong.ch8')
     display.start()
 
     while running:

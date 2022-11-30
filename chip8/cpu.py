@@ -1,11 +1,14 @@
 import random
 from .display import Display
+from .audio import Audio
 from .keyboard import Keyboard
 
 class CPU:
-    def __init__(self, keyboard: Keyboard, sound, display: Display) -> None:
+    def __init__(self, keyboard: Keyboard, audio: Audio, display: Display) -> None:
+        self.instructions_per_cycle = 10
+
         self.keyboard = keyboard
-        self.sound = sound
+        self.audio = audio
         self.display = display
 
         # 4096 bytes ram
@@ -81,15 +84,15 @@ class CPU:
                 counter += 1
 
     def cycle(self):
-        if not self.paused:
-            opcode = self.fetch_instruction()
-            self.run_instruction(opcode)
-        if not self.paused:
-            if self.sound_timer > 0:
-                self.sound_timer -= 1
-            if self.delay_timer > 0:
-                self.delay_timer -= 1
+        for _ in range(self.instructions_per_cycle):
+            if not self.paused:
+                opcode = self.fetch_instruction()
+                self.run_instruction(opcode)
 
+        if not self.paused:
+            self.update_timers()
+
+        self.play_audio()
         self.display.update_display()
 
     def fetch_instruction(self):
@@ -104,6 +107,18 @@ class CPU:
         func = self.func_pointer[prefix]
         if func:
             func(opcode=opcode)
+
+    def update_timers(self):
+        if self.sound_timer > 0:
+            self.sound_timer -= 1
+        if self.delay_timer > 0:
+            self.delay_timer -= 1
+
+    def play_audio(self):
+        if self.sound_timer > 0:
+            self.audio.play()
+        else:
+            self.audio.stop()
 
     def handle_keyboard_press_callback(self, key: int) -> None:
         self.v[self.register_for_waiting_key] = key
@@ -285,10 +300,10 @@ class CPU:
             self.memory[self.i + 2] = self.v[x] % 10
             self.pc += 2
         elif second_byte == 0x55:
-            for i in range(x):
+            for i in range(x + 1):
                 self.memory[self.i + i] = self.v[i]
             self.pc += 2
         else:  # Fx65
-            for i in range(x):
+            for i in range(x + 1):
                 self.v[i] = self.memory[self.i + i]
             self.pc += 2

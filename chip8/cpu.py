@@ -98,7 +98,6 @@ class CPU:
             self.update_timers()
 
         self.play_audio()
-        self.display.update_display()
 
     def fetch_instruction(self):
         first_byte = self.memory[self.pc]

@@ -6,6 +6,7 @@ from .keyboard import Keyboard
 class CPU:
     def __init__(self, keyboard: Keyboard, audio: Audio, display: Display) -> None:
         self.instructions_per_cycle = 10
+        self.rom_file = None
 
         self.keyboard = keyboard
         self.audio = audio
@@ -76,12 +77,16 @@ class CPU:
             self.__handle_F,
         ]
 
-    def load_rom_into_memory(self, fileName):
-        with open(fileName, 'rb') as infile:
+    def is_rom_loaded(self) -> bool:
+        return self.rom_file is not None
+
+    def load_rom_into_memory(self, filepath):
+        with open(filepath, 'rb') as infile:
             counter = 0
             while byte := infile.read(1):
                 self.memory[counter + 0x200] = int.from_bytes(byte, 'big')
                 counter += 1
+        self.rom_file = filepath
 
     def cycle(self):
         for _ in range(self.instructions_per_cycle):

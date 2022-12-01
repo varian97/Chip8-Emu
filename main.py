@@ -1,5 +1,4 @@
 import pygame
-import time
 
 from chip8.cpu import CPU
 from chip8.audio import Audio
@@ -8,26 +7,21 @@ from chip8.keyboard import Keyboard
 
 pygame.init()
 pygame.display.set_caption('Chip8 Emulator')
+clock = pygame.time.Clock()
 
 if __name__ == '__main__':
     running = True
-
-    cycle_clock = 1 / 60
-    previous = time.time()
 
     display = Display(scale=10)
     keyboard = Keyboard()
     audio = Audio()
     cpu = CPU(audio=audio, keyboard=keyboard, display=display)
 
-    cpu.load_rom_into_memory('./roms/Pong.ch8')
+    cpu.load_rom_into_memory('./roms/SpaceInvaders.ch8')
     display.start()
 
     while running:
-        now = time.time()
-        if now - previous >= cycle_clock:
-            cpu.cycle()
-            previous = now
+        cpu.cycle()
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -38,3 +32,5 @@ if __name__ == '__main__':
                     cpu.handle_keyboard_press_callback(event.key)
             if event.type == pygame.KEYUP:
                 keyboard.on_key_released(event.key)
+
+        clock.tick(60)

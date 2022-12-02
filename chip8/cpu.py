@@ -80,7 +80,24 @@ class CPU:
     def is_rom_loaded(self) -> bool:
         return self.rom_file is not None
 
-    def load_rom_into_memory(self, filepath):
+    def reset(self, rom_filepath) -> None:
+        self.memory = [0] * 4096
+        self.v = [0] * 16
+        self.i = 0
+        self.delay_timer = 0
+        self.sound_timer = 0
+        self.pc = 0x200
+        self.stack = []
+        self.paused = False
+        self.register_for_waiting_key = None
+
+        for i in range(len(self.sprites)):
+            self.memory[i] = self.sprites[i]
+
+        self.load_rom_into_memory(rom_filepath)
+        self.display.clear_display()
+
+    def load_rom_into_memory(self, filepath) -> None:
         with open(filepath, 'rb') as infile:
             counter = 0
             while byte := infile.read(1):
@@ -88,7 +105,7 @@ class CPU:
                 counter += 1
         self.rom_file = filepath
 
-    def cycle(self):
+    def cycle(self) -> None:
         for _ in range(self.instructions_per_cycle):
             if not self.paused:
                 opcode = self.fetch_instruction()
@@ -99,26 +116,26 @@ class CPU:
 
         self.play_audio()
 
-    def fetch_instruction(self):
+    def fetch_instruction(self) -> str:
         first_byte = self.memory[self.pc]
         second_byte = self.memory[self.pc + 1]
         opcode = (first_byte << 8) | second_byte
 
         return opcode
 
-    def run_instruction(self, opcode):
+    def run_instruction(self, opcode) -> None:
         prefix = opcode >> 12
         func = self.func_pointer[prefix]
         if func:
             func(opcode=opcode)
 
-    def update_timers(self):
+    def update_timers(self) -> None:
         if self.sound_timer > 0:
             self.sound_timer -= 1
         if self.delay_timer > 0:
             self.delay_timer -= 1
 
-    def play_audio(self):
+    def play_audio(self) -> None:
         if self.sound_timer > 0:
             self.audio.play()
         else:
@@ -130,7 +147,7 @@ class CPU:
         self.paused = False
         self.pc += 2
 
-    def __handle_0(self, opcode):
+    def __handle_0(self, opcode) -> None:
         # 0x0nnn ignored for most modern interpreter
         if opcode == 0x00e0:
             self.display.clear_display()
@@ -139,48 +156,48 @@ class CPU:
             self.pc = self.stack.pop()
             pass
 
-    def __handle_1(self, opcode):
+    def __handle_1(self, opcode) -> None:
         self.pc = (opcode & 0xfff)
 
-    def __handle_2(self, opcode):
+    def __handle_2(self, opcode) -> None:
         self.stack.append(self.pc + 2)
         self.pc = (opcode & 0xfff)
 
-    def __handle_3(self, opcode):
+    def __handle_3(self, opcode) -> None:
         x = (opcode >> 8) & 0xf
         kk = (opcode & 0xff)
         if self.v[x] == kk:
             self.pc += 2
         self.pc += 2
 
-    def __handle_4(self, opcode):
+    def __handle_4(self, opcode) -> None:
         x = (opcode >> 8) & 0xf
         kk = (opcode & 0xff)
         if self.v[x] != kk:
             self.pc += 2
         self.pc += 2
 
-    def __handle_5(self, opcode):
+    def __handle_5(self, opcode) -> None:
         x = (opcode >> 8) & 0xf
         y = (opcode >> 4) & 0xf
         if self.v[x] == self.v[y]:
             self.pc += 2
         self.pc += 2
 
-    def __handle_6(self, opcode):
+    def __handle_6(self, opcode) -> None:
         x = (opcode >> 8) & 0xf
         kk = (opcode & 0xff)
         self.v[x] = kk
         self.pc += 2
 
-    def __handle_7(self, opcode):
+    def __handle_7(self, opcode) -> None:
         x = (opcode >> 8) & 0xf
         kk = (opcode & 0xff)
         total = (self.v[x] + kk) & 0xff
         self.v[x] = total
         self.pc += 2
 
-    def __handle_8(self, opcode):
+    def __handle_8(self, opcode) -> None:
         x = (opcode >> 8) & 0xf
         y = (opcode >> 4) & 0xf
 
@@ -221,7 +238,7 @@ class CPU:
 
         self.pc += 2
 
-    def __handle_9(self, opcode):
+    def __handle_9(self, opcode) -> None:
         x = (opcode >> 8) & 0xf
         y = (opcode >> 4) & 0xf
 
@@ -229,20 +246,20 @@ class CPU:
             self.pc += 2
         self.pc += 2
 
-    def __handle_A(self, opcode):
+    def __handle_A(self, opcode) -> None:
         self.i = (opcode & 0xfff)
         self.pc += 2
 
-    def __handle_B(self, opcode):
+    def __handle_B(self, opcode) -> None:
         self.pc = (opcode & 0xfff) + self.v[0]
 
-    def __handle_C(self, opcode):
+    def __handle_C(self, opcode) -> None:
         x = (opcode >> 8) & 0xf
         kk = (opcode & 0xff)
         self.v[x] = kk & random.randint(0, 255)
         self.pc += 2
 
-    def __handle_D(self, opcode):
+    def __handle_D(self, opcode) -> None:
         x = (opcode >> 8) & 0xf
         y = (opcode >> 4) & 0xf
         n = opcode & 0xf
@@ -264,7 +281,7 @@ class CPU:
 
         self.pc += 2
 
-    def __handle_E(self, opcode):
+    def __handle_E(self, opcode) -> None:
         x = (opcode >> 8) & 0xf
         second_byte = opcode & 0xff
         if second_byte == 0x9e:
@@ -276,7 +293,7 @@ class CPU:
 
         self.pc += 2
 
-    def __handle_F(self, opcode):
+    def __handle_F(self, opcode) -> None:
         x = (opcode >> 8) & 0xf
         second_byte = opcode & 0xff
 

@@ -1,7 +1,7 @@
 import pygame
 
 class Keyboard:
-    def __init__(self):
+    def __init__(self) -> None:
         self.KEYMAP = {
             pygame.K_1: 1,
             pygame.K_2: 2,

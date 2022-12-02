@@ -12,5 +12,5 @@ class Audio:
     def play(self) -> None:
         self.sound.play(0)
 
-    def stop(self):
+    def stop(self) -> None:
         self.sound.stop()

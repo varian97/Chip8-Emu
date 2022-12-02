@@ -15,11 +15,11 @@ class Display:
         self.scale = scale
         self.logic_surface = [[0] * self.width for _ in range(self.height)]
 
-    def start(self):
+    def start(self) -> None:
         self.surface = pygame.display.set_mode((self.width, self.height))
         self.surface.fill(K_BLACK)
 
-    def draw_welcome_screen(self):
+    def draw_welcome_screen(self) -> None:
         font = pygame.font.Font('freesansbold.ttf', 32)
         text = font.render('Chip 8 Emulator', True, K_WHITE)
 
@@ -41,7 +41,7 @@ class Display:
         self.surface.blit(text2, text_rect2)
         self.surface.blit(text3, text_rect3)
 
-    def clear_display(self):
+    def clear_display(self) -> None:
         self.surface.fill(K_BLACK)
         for i in range(self.height):
             for j in range(self.width):
@@ -61,5 +61,5 @@ class Display:
 
         return self.logic_surface[_y][_x] == 0
 
-    def update_display(self):
+    def update_display(self) -> None:
         pygame.display.update()
